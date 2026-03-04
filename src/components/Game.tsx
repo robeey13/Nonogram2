@@ -279,7 +279,7 @@ export default function Game() {
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${level.size}, ${cellSize}px)` }}>
             {playerGrid.map((row, rIndex) =>
               row.map((cell, cIndex) => {
-                const isCursor = cursor[0] === rIndex && cursor[1] === cIndex;
+                const isCursor = gamepadConnected && cursor[0] === rIndex && cursor[1] === cIndex;
                 const isHint = hintCell?.[0] === rIndex && hintCell?.[1] === cIndex;
                 return (
                   <div

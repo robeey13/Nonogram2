@@ -32,9 +32,38 @@ export default function FileLoader({ onLoad }: Props) {
   };
 
   return (
-    <div>
-      <p>Válaszd ki a JSON pályafájlt:</p>
-      <input type="file" accept=".json" onChange={handleFileUpload} />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        padding: 24
+      }}
+    >
+      <label
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "10px 18px",
+          borderRadius: 8,
+          backgroundColor: "#1976d2",
+          color: "white",
+          cursor: "pointer",
+          fontWeight: "bold",
+          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)"
+        }}
+      >
+        Pálya betöltése
+        <input
+          type="file"
+          accept=".json"
+          onChange={handleFileUpload}
+          style={{ display: "none" }}
+        />
+      </label>
     </div>
   );
 }

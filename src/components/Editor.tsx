@@ -161,7 +161,7 @@ export default function Editor() {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  const cellSize = 30;
+  const cellSize = 32;
   const maxHintLen = Math.ceil(grid.length / 2);
   const hintWidth = maxHintLen * cellSize;
   const hintHeight = maxHintLen * cellSize;
@@ -177,73 +177,97 @@ export default function Editor() {
       )}
       
       <Controls onResize={resize} onRandom={randomize} onSave={save} />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 12,
+        padding: 16
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          maxWidth: 900,
+          width: "100%"
+        }}
+      >
+        <div>
+          <Controls onResize={resize} onRandom={randomize} onSave={save} />
+        </div>
+      </div>
 
       <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `${hintWidth}px ${grid.length * cellSize}px`,
-            gridTemplateRows: `${grid.length * cellSize}px ${hintHeight}px`
-          }}
-        >
-          <div style={{ width: hintWidth, height: grid.length * cellSize, display: "flex", flexDirection: "column" }}>
-            {rowHints.map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  height: cellSize,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  paddingRight: 4
-                }}
-              >
-                {Array.from({ length: maxHintLen }).map((_, idx) => {
-                  const valueIndex = idx - (maxHintLen - h.length);
-                  const val = valueIndex >= 0 ? h[valueIndex] : null;
-                  return (
-                    <div key={idx} style={{ width: cellSize, textAlign: "center" }}>
-                      {val ?? ""}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <GridView grid={grid} onToggleCell={toggleCell} cursor={cursor} />
-          </div>
-
-          <div style={{ width: hintWidth, height: hintHeight }} />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${grid.length}, ${cellSize}px)`,
-              gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)`
-            }}
-          >
-            {Array.from({ length: maxHintLen }).map((_, r) =>
-              columnHints.map((col, c) => {
-                const val = r < col.length ? col[r] : null;
+        style={{
+          display: "grid",
+          gridTemplateColumns: `${hintWidth}px ${grid.length * cellSize}px`,
+          gridTemplateRows: `${grid.length * cellSize}px ${hintHeight}px`
+        }}
+      >
+        <div style={{ width: hintWidth, height: grid.length * cellSize, display: "flex", flexDirection: "column" }}>
+          {rowHints.map((h, i) => (
+            <div
+              key={i}
+              style={{
+                height: cellSize,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                paddingRight: 4
+              }}
+            >
+              {Array.from({ length: maxHintLen }).map((_, idx) => {
+                const valueIndex = idx - (maxHintLen - h.length);
+                const val = valueIndex >= 0 ? h[valueIndex] : null;
                 return (
-                  <div
-                    key={`${r}-${c}`}
-                    style={{
-                      width: cellSize,
-                      height: cellSize,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
+                  <div key={idx} style={{ width: cellSize, textAlign: "center" }}>
                     {val ?? ""}
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          ))}
         </div>
+
+        <div>
+          <GridView grid={grid} onToggleCell={toggleCell} />
+        </div>
+
+        <div style={{ width: hintWidth, height: hintHeight }} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${grid.length}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)`
+          }}
+        >
+          {Array.from({ length: maxHintLen }).map((_, r) =>
+            columnHints.map((col, c) => {
+              const val = r < col.length ? col[r] : null;
+              return (
+                <div
+                  key={`${r}-${c}`}
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  {val ?? ""}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </>
   );
 }

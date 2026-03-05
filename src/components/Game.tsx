@@ -14,6 +14,7 @@ export default function Game() {
   const [hintCell, setHintCell] = useState<[number, number] | null>(null);
   const [cursor, setCursor] = useState<[number, number]>([0, 0]);
   const [gamepadConnected, setGamepadConnected] = useState(false);
+  const [wrongMessage, setWrongMessage] = useState(false);
 
   const rafRef = useRef<number | null>(null);
   const lastMoveTime = useRef(0);
@@ -53,10 +54,15 @@ export default function Game() {
   };
 
   useEffect(() => {
+    const checkGamepad = () => {
+      const gp = navigator.getGamepads()[0];
+      setGamepadConnected(!!gp);
+    };
     const onConnect = () => setGamepadConnected(true);
     const onDisconnect = () => setGamepadConnected(false);
     window.addEventListener("gamepadconnected", onConnect);
     window.addEventListener("gamepaddisconnected", onDisconnect);
+    checkGamepad();
     return () => {
       window.removeEventListener("gamepadconnected", onConnect);
       window.removeEventListener("gamepaddisconnected", onDisconnect);
@@ -162,7 +168,10 @@ export default function Game() {
                 correct = false; break outer;
               }
           if (correct) setGameWon(true);
-          else alert("Még nem jó!");
+          else {
+            setWrongMessage(true);
+            setTimeout(() => setWrongMessage(false), 2000);
+          }
         }
       }
 
@@ -221,115 +230,266 @@ export default function Game() {
       for (let c = 0; c < level.size; c++)
         if ((level.grid[r][c] === 1 && playerGrid[r][c] !== 1) ||
             (level.grid[r][c] === 0 && playerGrid[r][c] === 1)) {
-          alert("Még nem jó!");
+          setWrongMessage(true);
+          setTimeout(() => setWrongMessage(false), 2000);
           return;
         }
     setGameWon(true);
   };
 
-  const cellSize = 30;
+  const cellSize = level.size <= 10 ? 32 : level.size <= 15 ? 26 : 22;
   const maxHintLen = Math.ceil(level.size / 2);
   const hintWidth = maxHintLen * cellSize;
-  const hintHeight = maxHintLen * cellSize;
+
+  const renderLives = () => {
+    return (
+      <div className="lives-display">
+        {[0, 1, 2].map(i => (
+          <span 
+            key={i} 
+            className={`life-heart ${i >= lives ? 'lost' : ''}`}
+            style={{ filter: i >= lives ? 'grayscale(1)' : 'drop-shadow(0 0 5px #ff3366)' }}
+          >
+            <span style={{ fontFamily: 'Arial' }}>♥</span>
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ fontSize: "18px", fontWeight: "bold", color: lives === 0 ? "red" : gameWon ? "green" : "black" }}>
-          Életek: {lives}
+      <div className="arcade-stats" style={{ flexWrap: "wrap" }}>
+        <div className="stat-item">
+          <span className="stat-label">Életek</span>
+          {renderLives()}
         </div>
-        <button onClick={checkWin} disabled={lives === 0 || gameWon}>Ellenőrzés</button>
-        <button
-          onClick={useHint}
-          disabled={lives === 0 || gameWon || hintsLeft === 0}
-          style={{ backgroundColor: hintsLeft === 1 ? "#ff9800" : undefined }}
-        >
-           Tipp ({hintsLeft})
-        </button>
-        {lives === 0 && <div style={{ color: "red", fontWeight: "bold" }}>Játék vége!</div>}
-        {gameWon && <div style={{ color: "green", fontWeight: "bold" }}>Nyertél! 🎉</div>}
-        {(lives === 0 || gameWon) && (
-          <button onClick={resetGame} style={{ marginLeft: "auto" }}>Új játék</button>
-        )}
-        <div style={{ marginLeft: "auto", fontSize: "0.85em", color: gamepadConnected ? "green" : "#aaa" }}>
-          {gamepadConnected ? "🎮 Kontroller csatlakozva" : "Nincs kontroller"}
+        
+        <div className="stat-item">
+          <span className="stat-label">Tippek</span>
+          <span className="stat-value" style={{ color: hintsLeft === 0 ? '#ff3366' : '#ffff00' }}>
+            {hintsLeft}/3
+          </span>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button 
+            onClick={checkWin} 
+            disabled={lives === 0 || gameWon}
+            className="btn-green"
+          >
+            Ellenőrzés
+          </button>
+          <button
+            onClick={useHint}
+            disabled={lives === 0 || gameWon || hintsLeft === 0}
+            className="btn-yellow"
+          >
+            Tipp
+          </button>
+          {(lives === 0 || gameWon) && (
+            <button onClick={resetGame} className="btn-magenta">
+              Uj jaték
+            </button>
+          )}
+        </div>
+
+        <div className={`controller-status ${gamepadConnected ? 'connected' : 'disconnected'}`} style={{ marginLeft: "auto" }}>
+          {gamepadConnected ? "Kontroller csatlakozva" : "Nincs kontroller"}
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `${hintWidth}px ${level.size * cellSize}px`,
-          gridTemplateRows: `${level.size * cellSize}px ${hintHeight}px`
-        }}
-      >
-        <div style={{ width: hintWidth, height: level.size * cellSize, display: "flex", flexDirection: "column" }}>
-          {level.rowHints.map((h, i) => (
-            <div key={i} style={{ height: cellSize, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4 }}>
-              {Array.from({ length: maxHintLen }).map((_, idx) => {
-                const valueIndex = idx - (maxHintLen - h.length);
-                const val = valueIndex >= 0 ? h[valueIndex] : null;
-                return <div key={idx} style={{ width: cellSize, textAlign: "center" }}>{val ?? ""}</div>;
-              })}
-            </div>
-          ))}
+      {wrongMessage && (
+        <div className="game-message wrong" style={{ marginBottom: 20, textAlign: "center", fontSize: 24, color: "#ff8800", textShadow: "0 0 20px #ff8800", animation: "shake 0.5s ease-in-out" }}>
+          MEG NEM JO!
         </div>
+      )}
+      {lives === 0 && (
+        <div className="game-message lose" style={{ marginBottom: 20, textAlign: "center" }}>
+          GAME OVER!
+        </div>
+      )}
+      {gameWon && (
+        <div className="game-message win" style={{ marginBottom: 20, textAlign: "center" }}>
+          VICTORY!
+        </div>
+      )}
 
-        <div>
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${level.size}, ${cellSize}px)` }}>
-            {playerGrid.map((row, rIndex) =>
-              row.map((cell, cIndex) => {
-                const isCursor = gamepadConnected && cursor[0] === rIndex && cursor[1] === cIndex;
-                const isHint = hintCell?.[0] === rIndex && hintCell?.[1] === cIndex;
+      <div className="arcade-grid-container" style={{ overflow: "auto", maxWidth: "100%" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `${hintWidth}px ${level.size * cellSize}px`,
+            gridTemplateRows: `${level.size * cellSize}px auto`,
+            gap: 2
+          }}
+        >
+          <div style={{ width: hintWidth, height: level.size * cellSize, display: "flex", flexDirection: "column" }}>
+            {level.rowHints.map((h, i) => (
+              <div 
+                key={i} 
+                style={{ 
+                  height: cellSize, 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "flex-end", 
+                  paddingRight: 4,
+                  borderBottom: (i + 1) % 5 === 0 ? "2px solid #2a2a4a" : undefined
+                }}
+              >
+                {Array.from({ length: maxHintLen }).map((_, idx) => {
+                  const valueIndex = idx - (maxHintLen - h.length);
+                  const val = valueIndex >= 0 ? h[valueIndex] : null;
+                  return (
+                    <div 
+                      key={idx} 
+                      className="hint-number"
+                      style={{ 
+                        width: cellSize, 
+                        textAlign: "center",
+                        fontSize: cellSize <= 22 ? 8 : 10,
+                        color: val ? "#ff00ff" : "transparent"
+                      }}
+                    >
+                      {val ?? ""}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${level.size}, ${cellSize}px)` }}>
+              {playerGrid.map((row, rIndex) =>
+                row.map((cell, cIndex) => {
+                  const isCursor = gamepadConnected && cursor[0] === rIndex && cursor[1] === cIndex;
+                  const isHint = hintCell?.[0] === rIndex && hintCell?.[1] === cIndex;
+                  const isFilled = cell === 1;
+                  const isMarked = cell === 2;
+                  
+                  const borderRight = (cIndex + 1) % 5 === 0 && cIndex !== level.size - 1 ? "2px solid #3a3a5a" : "1px solid #2a2a4a";
+                  const borderBottom = (rIndex + 1) % 5 === 0 && rIndex !== level.size - 1 ? "2px solid #3a3a5a" : "1px solid #2a2a4a";
+                  
+                  const activeOutline = isCursor ? "3px solid #ffff00" : isHint ? "3px solid #ff8800" : undefined;
+                  
+                  return (
+                    <div
+                      key={`${rIndex}-${cIndex}`}
+                      onClick={() => handleLeftClick(rIndex, cIndex)}
+                      onContextMenu={(e) => handleRightClick(e, rIndex, cIndex)}
+                      className={`arcade-cell ${isFilled ? 'filled' : ''} ${isMarked ? 'marked' : ''} ${isCursor ? 'cursor' : ''} ${isHint ? 'hint' : ''}`}
+                      style={{
+                        width: cellSize,
+                        height: cellSize,
+                        boxSizing: "border-box",
+                        borderRight,
+                        borderBottom,
+                        borderTop: rIndex === 0 ? "1px solid #2a2a4a" : "1px solid transparent",
+                        borderLeft: cIndex === 0 ? "1px solid #2a2a4a" : "1px solid transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: lives > 0 && !gameWon ? "pointer" : "not-allowed",
+                        zIndex: (isCursor || isHint) ? 10 : undefined,
+                        position: "relative",
+                        outline: activeOutline,
+                        outlineOffset: "-3px",
+                        background: isHint 
+                          ? "rgba(255, 136, 0, 0.3)"
+                          : isFilled 
+                            ? "linear-gradient(145deg, #00fff7, #008888)" 
+                            : isMarked 
+                              ? "linear-gradient(145deg, #2a1a2a, #1a121a)"
+                              : "linear-gradient(145deg, #1a1a2e, #12121a)",
+                        boxShadow: isCursor 
+                          ? "0 0 15px rgba(255, 255, 0, 0.5), inset 0 0 10px rgba(255, 255, 0, 0.2)"
+                          : isHint
+                            ? "0 0 15px rgba(255, 136, 0, 0.5)"
+                            : isFilled 
+                              ? "inset 0 -2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(0, 255, 247, 0.5)"
+                              : undefined,
+                        animation: isHint ? "hintPulse 0.5s ease-in-out infinite" : undefined,
+                        transition: "all 0.1s ease"
+                      }}
+                    >
+                      {isMarked && (
+                        <span style={{ 
+                          color: "#ff3366", 
+                          fontWeight: "bold", 
+                          fontSize: cellSize <= 22 ? 12 : cellSize <= 26 ? 14 : 18,
+                          textShadow: "0 0 10px #ff3366"
+                        }}>
+                          ×
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div style={{ width: hintWidth }} />
+
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: `repeat(${level.size}, ${cellSize}px)`, 
+            gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)` 
+          }}>
+            {Array.from({ length: maxHintLen }).map((_, r) =>
+              level.columnHints.map((col, c) => {
+                const val = r < col.length ? col[r] : null;
                 return (
-                  <div
-                    key={`${rIndex}-${cIndex}`}
-                    onClick={() => handleLeftClick(rIndex, cIndex)}
-                    onContextMenu={(e) => handleRightClick(e, rIndex, cIndex)}
-                    style={{
-                      width: cellSize,
-                      height: cellSize,
-                      boxSizing: "border-box",
-                      border: isCursor ? "2px solid #2196f3" : isHint ? "2px solid #ff9800" : "1px solid black",
-                      backgroundColor: isHint ? "#fff3cd" : cell === 1 ? "black" : cell === 2 ? "#ddd" : "white",
-                      cursor: "pointer",
-                      position: "relative"
+                  <div 
+                    key={`${r}-${c}`} 
+                    className="hint-number"
+                    style={{ 
+                      width: cellSize, 
+                      height: cellSize, 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      fontSize: cellSize <= 22 ? 8 : 10,
+                      borderRight: (c + 1) % 5 === 0 && c !== level.size - 1 ? "2px solid #2a2a4a" : undefined,
+                      color: val ? "#ff00ff" : "transparent"
                     }}
                   >
-                    {cell === 2 && (
-                      <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", color: "red", fontWeight: "bold", fontSize: "18px" }}>×</span>
-                    )}
+                    {val ?? ""}
                   </div>
                 );
               })
             )}
           </div>
         </div>
-
-        <div style={{ width: hintWidth, height: hintHeight }} />
-
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${level.size}, ${cellSize}px)`, gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)` }}>
-          {Array.from({ length: maxHintLen }).map((_, r) =>
-            level.columnHints.map((col, c) => {
-              const val = r < col.length ? col[r] : null;
-              return (
-                <div key={`${r}-${c}`} style={{ width: cellSize, height: cellSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {val ?? ""}
-                </div>
-              );
-            })
-          )}
-        </div>
       </div>
 
       {gamepadConnected && (
-        <div style={{ marginTop: 16, fontSize: "0.85em", color: "#555", display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <span>🕹️ <b>D-pad / bal kar</b> – mozgás</span>
-          <span>🔵 <b>A</b> – cella kitöltése</span>
-          <span>🔴 <b>B</b> – X jelölés</span>
-          <span>🟡 <b>Y</b> – tipp</span>
-          <span>▶ <b>Start</b> – ellenőrzés</span>
-          <span>⬛ <b>Select</b> – vissza a főoldalra</span>
+        <div className="controller-help">
+          <div className="controller-help-item">
+            <span className="key">D-pad</span>
+            <span>Mozgás</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#00ff88" }}>A</span>
+            <span>Kitöltés</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#ff3366" }}>B</span>
+            <span>X jelölés</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#ffff00" }}>Y</span>
+            <span>Tipp</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#ff00ff" }}>Start</span>
+            <span>Ellenőrzés</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key">Select</span>
+            <span>Vissza</span>
+          </div>
         </div>
       )}
     </div>

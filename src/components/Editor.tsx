@@ -79,10 +79,15 @@ export default function Editor() {
   }
 
   useEffect(() => {
+    const checkGamepad = () => {
+      const gp = navigator.getGamepads()[0];
+      setGamepadConnected(!!gp);
+    };
     const onConnect = () => setGamepadConnected(true);
     const onDisconnect = () => setGamepadConnected(false);
     window.addEventListener("gamepadconnected", onConnect);
     window.addEventListener("gamepaddisconnected", onDisconnect);
+    checkGamepad();
     return () => {
       window.removeEventListener("gamepadconnected", onConnect);
       window.removeEventListener("gamepaddisconnected", onDisconnect);
@@ -161,7 +166,7 @@ export default function Editor() {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  const cellSize = 32;
+  const cellSize = grid.length <= 10 ? 32 : grid.length <= 15 ? 26 : 22;
   const maxHintLen = Math.ceil(grid.length / 2);
   const hintWidth = maxHintLen * cellSize;
   const hintHeight = maxHintLen * cellSize;
@@ -171,8 +176,23 @@ export default function Editor() {
       <ImageLoader onLoad={handleImageLoad} />
 
       {gamepadConnected && (
-        <div style={{ marginBottom: 8, padding: "6px 12px", background: "#e8f5e9", border: "1px solid #4caf50", borderRadius: 6, fontSize: 13 }}>
-          🎮 Kontroller: D-pad = mozgás | A = rajzol | Y = véletlen | B = vissza
+        <div className="controller-help" style={{ marginBottom: 15 }}>
+          <div className="controller-help-item">
+            <span className="key">D-pad</span>
+            <span>Mozgas</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#00ff88" }}>A</span>
+            <span>Rajzolás</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#ffff00" }}>Y</span>
+            <span>Véletlen</span>
+          </div>
+          <div className="controller-help-item">
+            <span className="key" style={{ color: "#ff3366" }}>B</span>
+            <span>Vissza</span>
+          </div>
         </div>
       )}
       
@@ -181,76 +201,92 @@ export default function Editor() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 12,
-          padding: 16
+          gap: 12
         }}
       >
         <Controls onResize={resize} onRandom={randomize} onSave={save} />
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `${hintWidth}px ${grid.length * cellSize}px`,
-            gridTemplateRows: `${grid.length * cellSize}px ${hintHeight}px`
-          }}
-        >
-          <div style={{ width: hintWidth, height: grid.length * cellSize, display: "flex", flexDirection: "column" }}>
-            {rowHints.map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  height: cellSize,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  paddingRight: 4
-                }}
-              >
-                {Array.from({ length: maxHintLen }).map((_, idx) => {
-                  const valueIndex = idx - (maxHintLen - h.length);
-                  const val = valueIndex >= 0 ? h[valueIndex] : null;
-                  return (
-                    <div key={idx} style={{ width: cellSize, textAlign: "center" }}>
-                      {val ?? ""}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <GridView grid={grid} onToggleCell={toggleCell} />
-          </div>
-
-          <div style={{ width: hintWidth, height: hintHeight }} />
-
+        <div className="arcade-grid-container" style={{ overflow: "auto", maxWidth: "100%" }}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: `repeat(${grid.length}, ${cellSize}px)`,
-              gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)`
+              gridTemplateColumns: `${hintWidth}px ${grid.length * cellSize}px`,
+              gridTemplateRows: `${grid.length * cellSize}px ${hintHeight}px`,
+              gap: 2
             }}
           >
-            {Array.from({ length: maxHintLen }).map((_, r) =>
-              columnHints.map((col, c) => {
-                const val = r < col.length ? col[r] : null;
-                return (
-                  <div
-                    key={`${r}-${c}`}
-                    style={{
-                      width: cellSize,
-                      height: cellSize,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
-                    {val ?? ""}
-                  </div>
-                );
-              })
-            )}
+            <div style={{ width: hintWidth, height: grid.length * cellSize, display: "flex", flexDirection: "column" }}>
+              {rowHints.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: cellSize,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    paddingRight: 4,
+                    borderBottom: (i + 1) % 5 === 0 ? "2px solid #2a2a4a" : undefined
+                  }}
+                >
+                  {Array.from({ length: maxHintLen }).map((_, idx) => {
+                    const valueIndex = idx - (maxHintLen - h.length);
+                    const val = valueIndex >= 0 ? h[valueIndex] : null;
+                    return (
+                      <div 
+                        key={idx} 
+                        className="hint-number"
+                        style={{ 
+                          width: cellSize, 
+                          textAlign: "center",
+                          fontSize: cellSize <= 22 ? 8 : 10,
+                          color: val ? "#ff00ff" : "transparent"
+                        }}
+                      >
+                        {val ?? ""}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <GridView grid={grid} onToggleCell={toggleCell} cursor={gamepadConnected ? cursor : undefined} cellSize={cellSize} />
+            </div>
+
+            <div style={{ width: hintWidth, height: hintHeight }} />
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${grid.length}, ${cellSize}px)`,
+                gridTemplateRows: `repeat(${maxHintLen}, ${cellSize}px)`
+              }}
+            >
+              {Array.from({ length: maxHintLen }).map((_, r) =>
+                columnHints.map((col, c) => {
+                  const val = r < col.length ? col[r] : null;
+                  return (
+                    <div
+                      key={`${r}-${c}`}
+                      className="hint-number"
+                      style={{
+                        width: cellSize,
+                        height: cellSize,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: cellSize <= 22 ? 8 : 10,
+                        borderRight: (c + 1) % 5 === 0 && c !== grid.length - 1 ? "2px solid #2a2a4a" : undefined,
+                        color: val ? "#ff00ff" : "transparent"
+                      }}
+                    >
+                      {val ?? ""}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>

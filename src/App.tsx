@@ -5,10 +5,10 @@ import SolutionViewer from "./components/SolutionViewer";
 
 type Screen = "menu" | "editor" | "game" | "solution";
 
-const MENU_ITEMS: { screen: Screen; label: string }[] = [
-  { screen: "editor", label: "Pálya készítés" },
-  { screen: "game", label: "Játék indítása" },
-  { screen: "solution", label: "Megoldás megtekintése" },
+const MENU_ITEMS: { screen: Screen; label: string; icon: string }[] = [
+  { screen: "editor", label: "Palya keszites", icon: "" },
+  { screen: "game", label: "Jatek inditasa", icon: "" },
+  { screen: "solution", label: "Megoldas megtekintese", icon: "" },
 ];
 
 export default function App() {
@@ -85,11 +85,21 @@ export default function App() {
     return () => cancelAnimationFrame(rafId);
   }, [screen]);
 
+  const renderBackButton = () => (
+    <button 
+      onClick={() => setScreen("menu")}
+      className="btn-magenta"
+      style={{ marginBottom: 20 }}
+    >
+      ◀ Vissza
+    </button>
+  );
+
   if (screen === "editor") {
     return (
-      <div style={{ padding: 20 }}>
-        <button onClick={() => setScreen("menu")}>Vissza a főoldalra</button>
-        <h1>Picross pályaszerkesztő</h1>
+      <div className="arcade-frame" style={{ maxWidth: 900, width: "100%" }}>
+        {renderBackButton()}
+        <h1>Palya Keszito</h1>
         <Editor />
       </div>
     );
@@ -97,9 +107,9 @@ export default function App() {
 
   if (screen === "game") {
     return (
-      <div style={{ padding: 20 }}>
-        <button onClick={() => setScreen("menu")}>Vissza a főoldalra</button>
-        <h1>Picross játék</h1>
+      <div className="arcade-frame" style={{ maxWidth: 900, width: "100%" }}>
+        {renderBackButton()}
+        <h1>Picross Arcade</h1>
         <Game />
       </div>
     );
@@ -107,41 +117,88 @@ export default function App() {
 
   if (screen === "solution") {
     return (
-      <div style={{ padding: 20 }}>
-        <button onClick={() => setScreen("menu")}>Vissza a főoldalra</button>
-        <h1>Megoldás megtekintése</h1>
+      <div className="arcade-frame" style={{ maxWidth: 900, width: "100%" }}>
+        {renderBackButton()}
+        <h1>Megoldas</h1>
         <SolutionViewer />
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        padding: 20,
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-        alignItems: "flex-start"
-      }}
-    >
-      <h1>Picross</h1>
-      <p>Válaszd ki, mit szeretnél csinálni:</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {MENU_ITEMS.map((item, i) => (
-          <button
-            key={item.screen}
-            onClick={() => setScreen(item.screen)}
-            style={{
-              outline: gamepadConnected && i === menuIndex ? "3px solid #2196f3" : undefined,
-              outlineOffset: 2,
-              background: gamepadConnected && i === menuIndex ? "#e3f2fd" : undefined,
-              fontWeight: gamepadConnected && i === menuIndex ? "bold" : undefined,
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
+    <div className="arcade-frame" style={{ minWidth: 400 }}>
+      <div className="arcade-bolt" style={{ top: 15, left: 15 }} />
+      <div className="arcade-bolt" style={{ top: 15, right: 15 }} />
+      <div className="arcade-bolt" style={{ bottom: 15, left: 15 }} />
+      <div className="arcade-bolt" style={{ bottom: 15, right: 15 }} />
+      
+      <div style={{ textAlign: "center", marginBottom: 30 }}>
+        <h1 style={{ marginBottom: 10 }}>PICROSS</h1>
+        <div style={{ 
+          fontSize: 10, 
+          color: "#ff00ff", 
+          textShadow: "0 0 10px #ff00ff",
+          letterSpacing: 3
+        }}>
+          ★ ARCADE EDITION ★
+        </div>
+      </div>
+      
+      <div className="arcade-menu">
+        {MENU_ITEMS.map((item, i) => {
+          const isSelected = gamepadConnected && i === menuIndex;
+          return (
+            <div 
+              key={item.screen} 
+              className={`menu-item ${isSelected ? "selected" : ""}`}
+            >
+              <button
+                onClick={() => setScreen(item.screen)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  justifyContent: "center",
+                  borderColor: isSelected ? "#ffff00" : undefined,
+                  color: isSelected ? "#ffff00" : undefined,
+                  boxShadow: isSelected 
+                    ? "0 4px 0 #0a0a0f, 0 0 25px rgba(255, 255, 0, 0.5), inset 0 -2px 10px rgba(0, 0, 0, 0.3)"
+                    : undefined
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                <span>{item.label}</span>
+                {isSelected && <span style={{ marginLeft: "auto" }}>◀</span>}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ textAlign: "center", marginTop: 30 }}>
+        <div className="insert-coin">
+          {gamepadConnected ? "Nyomd meg az A gombot" : "Kattints a valasztashoz"}
+        </div>
+      </div>
+
+      <div style={{ 
+        marginTop: 20, 
+        textAlign: "center" 
+      }}>
+        <div className={`controller-status ${gamepadConnected ? "connected" : "disconnected"}`}>
+          {gamepadConnected ? "Kontroller csatlakozva" : "Nincs kontroller"}
+        </div>
+      </div>
+
+      <div style={{ 
+        marginTop: 30, 
+        textAlign: "center",
+        fontSize: 8,
+        color: "#666",
+        letterSpacing: 1
+      }}>
+        Csuka Róbert Kristóf, Mideczki Ádám, <br></br> Bődi Zoltán (Főnök) - 2026
       </div>
     </div>
   );

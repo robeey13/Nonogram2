@@ -22,19 +22,18 @@ export function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 export function detectOptimalGridSize(img: HTMLImageElement): number {
   const minDimension = Math.min(img.width, img.height);
   
-  // Egyszerű algoritmus: alapértelmezett 10x10
-  // Csak nagyon szélsőséges esetekben változik
+
   if (minDimension < 30) {
     return 5;
   } else if (minDimension > 300) {
     return 20;
   } else {
-    return 10;  // Legtöbb esetben ez
+    return 10;  
   }
 }
 
 export function imageToGrid(img: HTMLImageElement, targetSize: number): Grid {
-  // Canvas létrehozása
+
   const canvas = document.createElement("canvas");
   canvas.width = targetSize;
   canvas.height = targetSize;
@@ -44,14 +43,14 @@ export function imageToGrid(img: HTMLImageElement, targetSize: number): Grid {
     throw new Error("Nem sikerült a canvas context létrehozása");
   }
   
-  // Kép átméretezése és kirajzolása
+
   ctx.drawImage(img, 0, 0, targetSize, targetSize);
   
-  // Pixelek beolvasása
+
   const imageData = ctx.getImageData(0, 0, targetSize, targetSize);
   const pixels = imageData.data;
   
-  // Grid létrehozása
+
   const grid: Grid = [];
   
   for (let y = 0; y < targetSize; y++) {
@@ -63,11 +62,9 @@ export function imageToGrid(img: HTMLImageElement, targetSize: number): Grid {
       const b = pixels[index + 2];
       const a = pixels[index + 3];
       
-      // Világosság számítása (súlyozott átlag)
-      const brightness = (0.299 * r + 0.587 * g + 0.114 * b) * (a / 255);
+     const brightness = (0.299 * r + 0.587 * g + 0.114 * b) * (a / 255);
       
-      // Ha a világosság < 128, akkor sötét (1), különben világos (0)
-      row.push(brightness < 128 ? 1 : 0);
+     row.push(brightness < 128 ? 1 : 0);
     }
     grid.push(row);
   }

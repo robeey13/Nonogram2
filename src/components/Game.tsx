@@ -244,7 +244,7 @@ export default function Game() {
           disabled={lives === 0 || gameWon || hintsLeft === 0}
           style={{ backgroundColor: hintsLeft === 1 ? "#ff9800" : undefined }}
         >
-          💡 Tipp ({hintsLeft})
+           Tipp ({hintsLeft})
         </button>
         {lives === 0 && <div style={{ color: "red", fontWeight: "bold" }}>Játék vége!</div>}
         {gameWon && <div style={{ color: "green", fontWeight: "bold" }}>Nyertél! 🎉</div>}
@@ -252,7 +252,7 @@ export default function Game() {
           <button onClick={resetGame} style={{ marginLeft: "auto" }}>Új játék</button>
         )}
         <div style={{ marginLeft: "auto", fontSize: "0.85em", color: gamepadConnected ? "green" : "#aaa" }}>
-          {gamepadConnected ? "🎮 Kontroller csatlakozva" : "🎮 Nincs kontroller"}
+          {gamepadConnected ? "🎮 Kontroller csatlakozva" : "Nincs kontroller"}
         </div>
       </div>
 
